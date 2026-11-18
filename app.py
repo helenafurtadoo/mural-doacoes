@@ -1,4 +1,5 @@
-from flask import Flask, render_template
+from flask import Flask, render_templatee, request, redirect, url_for
+from constantes import REGIOES
 from models import db, Usuario
 from flask_login import LoginManager 
 
@@ -17,6 +18,20 @@ def carregar_usuario(id_do_usuario):
 @app.route("/")
 def inicio():
     return "funcionando"
+
+@app.route("/cadastro", methods=["GET", "POST"])
+def cadastro():
+    if request.method == "POST":
+        # lê os campos, normaliza e valida
+        # ...
+
+        if erro:
+            return render_template("cadastro.html", regioes=REGIOES, erro=erro)
+
+        # cria o usuário, faz o commit
+        return redirect(url_for("inicio"))  # TODO: trocar para login no passo 4
+
+    return render_template("cadastro.html", regioes=REGIOES)
 
 
 if __name__ == "__main__":
