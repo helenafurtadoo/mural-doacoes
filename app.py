@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for
 from constantes import REGIOES
 from models import db, Usuario
-from flask_login import LoginManager
-from werkzeug.security import generate_password_hash
+from flask_login import LoginManager, login_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mural.db'
@@ -10,20 +10,35 @@ app.config['SECRET_KEY'] = 'senha'
 db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_view = "login"
 
 
 @login_manager.user_loader
 def carregar_usuario(id_do_usuario):
-    return Usuario.query.get(int(id_do_usuario))
+    return db.session.get(Usuario, int(id_do_usuario))
 
 
 @app.route("/")
 def inicio():
-    return "funcionando"
+    if current_user.is_authenticated:
+        return f"Logada como {current_user.nome}"
+    return "funcionando - ninguém logado"
 
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        senha = request.form.get("senha", "")
+        usuario = db.session.execute(
+            db.select(Usuario).filter_by(email=email)
+        ).scalar_one_or_none()
+        if usuario is not None and check_password_hash(usuario.senha_hash, senha):
+            login_user(usuario)
+            return redirect(url_for("inicio"))
+        else:
+            erro = "E-mail ou senha incorretos."
+            return render_template("login.html", erro=erro)
     return render_template("login.html")
 
 
@@ -61,7 +76,7 @@ def cadastro():
         usuario = Usuario(nome=nome, email=email, senha_hash=generate_password_hash(senha), regiao=regiao, telefone=telefone)
         db.session.add(usuario) #.add() adiciona o usuário ao banco de dados
         db.session.commit() #.commit() salva as alterações no banco de dados
-        return redirect(url_for("inicio"))  # TODO: trocar para login no passo 4
+        return redirect(url_for("login"))
     
     return render_template("cadastro.html", regioes=REGIOES)
 
