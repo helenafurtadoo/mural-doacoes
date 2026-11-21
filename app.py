@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 from constantes import REGIOES
 from models import db, Usuario
-from flask_login import LoginManager, login_user, current_user
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -19,11 +19,9 @@ def carregar_usuario(id_do_usuario):
 
 
 @app.route("/")
+@login_required
 def inicio():
-    if current_user.is_authenticated:
-        return f"Logada como {current_user.nome}"
-    return "funcionando - ninguém logado"
-
+    return render_template("inicio.html") 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -40,6 +38,12 @@ def login():
             erro = "E-mail ou senha incorretos."
             return render_template("login.html", erro=erro)
     return render_template("login.html")
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("login"))
 
 
 @app.route("/cadastro", methods=["GET", "POST"])
