@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Publicar Doação</title>
+  </head>
+  <body>
+    <a href="{{ url_for('publicar_doacao') }}">Publicar doação</a
+      {% if sucesso %}
+      <p>{{ sucesso }}</p>
+      {% endif %}   
+      {% if erro %}
+      <p>{{ erro }}</p>
+      {% endif %}
+
+      <!-- Campo de Título -->
+      <div>
+        <label for="titulo">Título:</label>
+        <input
+          type="text"
+          id="titulo"
+          name="titulo"
+          maxlength="100"
+          required
+        />
+      </div>
+
+      <!-- Campo de Descrição -->
+      <div>
+        <label for="descricao">Descrição:</label>
+        <textarea
+          id="descricao"
+          name="descricao"
+          placeholder="Descreva o item que deseja doar"
+          required
+        ></textarea>
+      </div>
+
+      <!-- Campo de Categoria -->
+      <div>
+        <label for="categoria">Categoria:</label>
+        <select name="categoria" id="categoria" required>
+          <option value="">Selecione uma categoria</option>
+          {% for categoria in categorias %}
+          <option value="{{ categoria }}">{{ categoria }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Campo de Estado de Conservação -->
+      <div>
+        <label for="estado_conservacao">Estado de Conservação:</label>
+        <select name="estado_conservacao" id="estado_conservacao" required>
+          <option value="">Selecione o estado de conservação</option>
+          {% for estado in estados %}
+          <option value="{{ estado }}">{{ estado }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Campo de Região -->
+      <div>
+        <label for="regiao">Região:</label>
+        <select name="regiao" id="regiao" required>
+          <option value="">Selecione sua região</option>
+          {% for regiao in regioes %}
+          <option value="{{ regiao }}">{{ regiao }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Campo de Ponto de Referência (opcional) -->
+      <div>
+        <label for="ponto_referencia">Ponto de Referência:</label>
+        <input
+          type="text"
+          id="ponto_referencia"
+          name="ponto_referencia"
+          maxlength="120"
+          placeholder="Opcional, ex.: perto da estação"
+        />
+      </div>
+
+      <p>Não são aceitos remédios, alimentos, itens sexuais, eletrodomésticos e eletrônicos.</p>
+
+      <!-- Botão de Envio -->
+      <button type="submit">Publicar Doação</button>
+    </form>
+  </body>
+</html>
