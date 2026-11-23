@@ -14,6 +14,8 @@ class Usuario(UserMixin, db.Model):
     telefone = db.Column(db.String(20), nullable=False)
     data_criacao = db.Column(db.DateTime, nullable=False, default=datetime.now)
     doacoes = db.relationship("Doacao", back_populates="doador")
+
+    
 class Doacao(db.Model):
     __tablename__ = "doacoes"
     id = db.Column(db.Integer, primary_key=True)
