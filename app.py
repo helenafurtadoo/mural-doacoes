@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
-from constantes import REGIOES
-from models import db, Usuario
+from constantes import REGIOES, CATEGORIAS, ESTADO_CONSERVACAO
+from models import db, Usuario, Doacao
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -83,6 +83,49 @@ def cadastro():
         return redirect(url_for("login"))
     
     return render_template("cadastro.html", regioes=REGIOES)
+
+
+@app.route("/doacoes/nova", methods=["GET", "POST"])
+@login_required
+def publicar_doacao():
+    if request.method == "POST":
+        titulo = request.form.get("titulo", "").strip()
+        descricao = request.form.get("descricao", "").strip()
+        categoria = request.form.get("categoria", "").strip()
+        estado_conservacao = request.form.get("estado_conservacao", "").strip()
+        regiao = request.form.get("regiao", "").strip()
+        ponto_referencia = request.form.get("ponto_referencia", "").strip()
+
+        erro = None
+        if not titulo or not descricao or not categoria or not estado_conservacao or not regiao:
+            erro = "Preencha todos os campos obrigatórios."
+        elif len(titulo) > 100:
+            erro = "O título deve ter no máximo 100 caracteres."
+        elif categoria not in CATEGORIAS:
+            erro = "Escolha uma categoria da lista."
+        elif estado_conservacao not in ESTADO_CONSERVACAO:
+            erro = "Escolha um estado de conservação da lista."
+        elif regiao not in REGIOES:
+            erro = "Escolha uma região da lista."
+        elif len(ponto_referencia) > 120:
+            erro = "O ponto de referência deve ter no máximo 120 caracteres."
+        if erro:
+            return render_template("publicar_doacao.html", erro=erro, categorias=CATEGORIAS, estados=ESTADO_CONSERVACAO, regioes=REGIOES)
+
+        doacao = Doacao(
+            doador_id=current_user.id,
+            titulo=titulo,
+            descricao=descricao,
+            categoria=categoria,
+            estado_conservacao=estado_conservacao,
+            regiao=regiao,
+            ponto_referencia=ponto_referencia or None  # Se o ponto de referência estiver vazio, armazena None
+        )
+        db.session.add(doacao)
+        db.session.commit()
+        return redirect(url_for("inicio")) # TODO: trocar para minhas doações no passo 3
+
+    return render_template("publicar_doacao.html", categorias=CATEGORIAS, estados=ESTADO_CONSERVACAO, regioes=REGIOES)
 
 
 if __name__ == "__main__":
