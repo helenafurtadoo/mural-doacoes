@@ -15,6 +15,7 @@ class Usuario(UserMixin, db.Model):
     data_criacao = db.Column(db.DateTime, nullable=False, default=datetime.now)
     doacoes = db.relationship("Doacao", back_populates="doador")
 
+    
 class Doacao(db.Model):
     __tablename__ = "doacoes"
     id = db.Column(db.Integer, primary_key=True)
@@ -26,6 +27,6 @@ class Doacao(db.Model):
     regiao = db.Column(db.String(80), nullable=False)
     ponto_referencia = db.Column(db.String(120), nullable=True)
     foto_caminho = db.Column(db.String(255), nullable=True)
-    status = db.Column(db.String(20), nullable=False, default="Disponível")
+    status = db.Column(db.String(20), nullable=False, default="disponível")
     data_criacao = db.Column(db.DateTime, nullable=False, default=datetime.now)
     doador = db.relationship("Usuario", back_populates="doacoes") 
