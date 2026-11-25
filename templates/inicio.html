@@ -8,6 +8,7 @@
 <body>
     <p>Logada como {{ current_user.nome }}</p>
     <a href="{{ url_for('publicar_doacao') }}">Publicar doação</a>
+    <a href="{{ url_for('minhas_doacoes') }}">Minhas doações</a>
     <a href="{{ url_for('logout') }}">Sair</a>
 </body>
 </html>

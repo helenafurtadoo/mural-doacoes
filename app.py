@@ -123,9 +123,18 @@ def publicar_doacao():
         )
         db.session.add(doacao)
         db.session.commit()
-        return redirect(url_for("inicio")) # TODO: trocar para minhas doações no passo 3
+        return redirect(url_for("minhas_doacoes")) 
 
     return render_template("publicar_doacao.html", categorias=CATEGORIAS, estados=ESTADO_CONSERVACAO, regioes=REGIOES)
+
+
+@app.route("/doacoes/minhas")
+@login_required
+def minhas_doacoes():
+    consulta = db.select(Doacao).where(Doacao.doador_id == current_user.id,
+     Doacao.status != "removida").order_by(Doacao.data_criacao.desc()) # current_user.id retorna o id do usuário logado, Doacao.status != "removida" filtra as doações que não foram removidas, .order_by(Doacao.data_criacao.desc()) ordena as doações da mais recente para a mais antiga
+    doacoes = db.session.execute(consulta).scalars().all() #.scalars() retorna uma lista de objetos Doacao, .all() retorna todos os resultados da consulta
+    return render_template("minhas_doacoes.html", doacoes=doacoes)
 
 
 if __name__ == "__main__":

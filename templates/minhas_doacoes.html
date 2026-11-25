@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Minhas Doações</title>
+</head>
+<body>
+    <h1>Minhas Doações</h1>
+    {% if doacoes %}
+        <ul>
+            {% for doacao in doacoes %}
+                <li>
+                    <strong>{{ doacao.titulo }}</strong> - {{ doacao.descricao }} - {{ doacao.categoria }} - {{ doacao.estado_conservacao }} - {{ doacao.regiao }} - {{ doacao.status }} - {{ doacao.data_criacao.strftime('%d/%m/%Y') }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Você não possui doações cadastradas.</p>
+    {% endif %}
+    <a href="{{ url_for('publicar_doacao') }}">Publicar nova doação</a>
+    <a href="{{ url_for('inicio') }}">Voltar para o início</a>
+</body>
+</html>
