@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, abort
 from constantes import REGIOES, CATEGORIAS, ESTADO_CONSERVACAO
 from models import db, Usuario, Doacao
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -85,6 +85,24 @@ def cadastro():
     return render_template("cadastro.html", regioes=REGIOES)
 
 
+def validar_doacao(titulo, descricao, categoria, estado_conservacao, regiao, ponto_referencia):
+    # Regras dos campos da doação, usadas na publicação e na edição.
+    # Devolve a mensagem do primeiro erro encontrado, ou None se estiver tudo certo.
+    if not titulo or not descricao or not categoria or not estado_conservacao or not regiao:
+        return "Preencha todos os campos obrigatórios."
+    if len(titulo) > 100:
+        return "O título deve ter no máximo 100 caracteres."
+    if categoria not in CATEGORIAS:
+        return "Escolha uma categoria da lista."
+    if estado_conservacao not in ESTADO_CONSERVACAO:
+        return "Escolha um estado de conservação da lista."
+    if regiao not in REGIOES:
+        return "Escolha uma região da lista."
+    if len(ponto_referencia) > 120:
+        return "O ponto de referência deve ter no máximo 120 caracteres."
+    return None
+
+
 @app.route("/doacoes/nova", methods=["GET", "POST"])
 @login_required
 def publicar_doacao():
@@ -96,19 +114,7 @@ def publicar_doacao():
         regiao = request.form.get("regiao", "").strip()
         ponto_referencia = request.form.get("ponto_referencia", "").strip()
 
-        erro = None
-        if not titulo or not descricao or not categoria or not estado_conservacao or not regiao:
-            erro = "Preencha todos os campos obrigatórios."
-        elif len(titulo) > 100:
-            erro = "O título deve ter no máximo 100 caracteres."
-        elif categoria not in CATEGORIAS:
-            erro = "Escolha uma categoria da lista."
-        elif estado_conservacao not in ESTADO_CONSERVACAO:
-            erro = "Escolha um estado de conservação da lista."
-        elif regiao not in REGIOES:
-            erro = "Escolha uma região da lista."
-        elif len(ponto_referencia) > 120:
-            erro = "O ponto de referência deve ter no máximo 120 caracteres."
+        erro = validar_doacao(titulo, descricao, categoria, estado_conservacao, regiao, ponto_referencia)
         if erro:
             return render_template("publicar_doacao.html", erro=erro, categorias=CATEGORIAS, estados=ESTADO_CONSERVACAO, regioes=REGIOES)
 
@@ -123,7 +129,7 @@ def publicar_doacao():
         )
         db.session.add(doacao)
         db.session.commit()
-        return redirect(url_for("minhas_doacoes")) 
+        return redirect(url_for("minhas_doacoes"))
 
     return render_template("publicar_doacao.html", categorias=CATEGORIAS, estados=ESTADO_CONSERVACAO, regioes=REGIOES)
 
@@ -131,10 +137,51 @@ def publicar_doacao():
 @app.route("/doacoes/minhas")
 @login_required
 def minhas_doacoes():
-    consulta = db.select(Doacao).where(Doacao.doador_id == current_user.id,
-     Doacao.status != "removida").order_by(Doacao.data_criacao.desc()) # current_user.id retorna o id do usuário logado, Doacao.status != "removida" filtra as doações que não foram removidas, .order_by(Doacao.data_criacao.desc()) ordena as doações da mais recente para a mais antiga
-    doacoes = db.session.execute(consulta).scalars().all() #.scalars() retorna uma lista de objetos Doacao, .all() retorna todos os resultados da consulta
+    # Só as doações da pessoa logada, sem as removidas, da mais nova para a mais antiga
+    consulta = (
+        db.select(Doacao)
+        .where(Doacao.doador_id == current_user.id, Doacao.status != "removida")
+        .order_by(Doacao.data_criacao.desc())
+    )
+    doacoes = db.session.execute(consulta).scalars().all()  # .scalars() devolve objetos Doacao, .all() junta numa lista
     return render_template("minhas_doacoes.html", doacoes=doacoes)
+
+
+@app.route("/doacoes/<int:doacao_id>/editar", methods=["GET", "POST"])
+@login_required
+def editar_doacao(doacao_id):
+    doacao = db.session.get(Doacao, doacao_id)
+    # Inexistente ou de outra pessoa: 404 nos dois casos, para não revelar se a doação existe
+    if doacao is None or doacao.doador_id != current_user.id:
+        abort(404)
+    # Só doação disponível pode ser editada (RF4)
+    if doacao.status != "disponível":
+        abort(403)
+
+    if request.method == "POST":
+        titulo = request.form.get("titulo", "").strip()
+        descricao = request.form.get("descricao", "").strip()
+        categoria = request.form.get("categoria", "").strip()
+        estado_conservacao = request.form.get("estado_conservacao", "").strip()
+        regiao = request.form.get("regiao", "").strip()
+        ponto_referencia = request.form.get("ponto_referencia", "").strip()
+
+        erro = validar_doacao(titulo, descricao, categoria, estado_conservacao, regiao, ponto_referencia)
+        if erro:
+            return render_template("publicar_doacao.html", erro=erro, doacao=doacao, categorias=CATEGORIAS, estados=ESTADO_CONSERVACAO, regioes=REGIOES)
+
+        # A doação veio do banco: basta mudar os atributos e fazer commit (sem db.session.add).
+        # doador_id, status e data_criacao nunca vêm do formulário.
+        doacao.titulo = titulo
+        doacao.descricao = descricao
+        doacao.categoria = categoria
+        doacao.estado_conservacao = estado_conservacao
+        doacao.regiao = regiao
+        doacao.ponto_referencia = ponto_referencia or None
+        db.session.commit()
+        return redirect(url_for("minhas_doacoes"))
+
+    return render_template("publicar_doacao.html", doacao=doacao, categorias=CATEGORIAS, estados=ESTADO_CONSERVACAO, regioes=REGIOES)
 
 
 if __name__ == "__main__":
