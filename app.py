@@ -184,6 +184,21 @@ def editar_doacao(doacao_id):
     return render_template("publicar_doacao.html", doacao=doacao, categorias=CATEGORIAS, estados=ESTADO_CONSERVACAO, regioes=REGIOES)
 
 
+@app.route("/doacoes/<int:doacao_id>/apagar", methods=["POST"])
+@login_required
+def apagar_doacao(doacao_id):
+    doacao = db.session.get(Doacao, doacao_id)
+    if doacao is None or doacao.doador_id != current_user.id:
+        abort(404)
+    if doacao.status == "removida":
+        abort(404)
+    if doacao.status == "reservado":
+        abort(403)
+    doacao.status = "removida"
+    db.session.commit()
+    return redirect(url_for("minhas_doacoes"))
+
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()

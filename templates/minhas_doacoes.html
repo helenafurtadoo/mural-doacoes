@@ -14,6 +14,11 @@
                     {% if doacao.status == "disponível" %}
                         <a href="{{ url_for('editar_doacao', doacao_id=doacao.id) }}">Editar</a>
                     {% endif %}
+                    {% if doacao.status != "reservado" %}
+                        <form method="POST" action="{{ url_for('apagar_doacao', doacao_id=doacao.id) }}" onsubmit="return confirm('Tem certeza que deseja excluir esta doação?');" style="display:inline;">
+                            <button type="submit">Excluir</button>
+                        </form>
+                    {% endif %}
                 </li>
             {% endfor %}
         </ul>
