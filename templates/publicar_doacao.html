@@ -5,13 +5,13 @@
     <title>Publicar Doação</title>
   </head>
   <body>
-    <a href="{{ url_for('publicar_doacao') }}">Publicar doação</a
-      {% if sucesso %}
-      <p>{{ sucesso }}</p>
-      {% endif %}   
-      {% if erro %}
-      <p>{{ erro }}</p>
-      {% endif %}
+    <form action="{{ url_for('publicar_doacao') }}" method="POST">
+    {% if sucesso %}
+    <p>{{ sucesso }}</p>
+    {% endif %}   
+    {% if erro %}
+    <p>{{ erro }}</p>
+    {% endif %}
 
       <!-- Campo de Título -->
       <div>
