@@ -2,13 +2,10 @@
 <html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
-    <title>Publicar Doação</title>
+    <title>{% if doacao %}Editar doação{% else %}Publicar doação{% endif %}</title>
   </head>
   <body>
-    <form action="{{ url_for('publicar_doacao') }}" method="POST">
-    {% if sucesso %}
-    <p>{{ sucesso }}</p>
-    {% endif %}   
+    <form method="POST">
     {% if erro %}
     <p>{{ erro }}</p>
     {% endif %}
@@ -21,6 +18,7 @@
           id="titulo"
           name="titulo"
           maxlength="100"
+          value="{{ doacao.titulo if doacao }}"
           required
         />
       </div>
@@ -33,7 +31,7 @@
           name="descricao"
           placeholder="Descreva o item que deseja doar"
           required
-        ></textarea>
+        >{{ doacao.descricao if doacao }}</textarea>
       </div>
 
       <!-- Campo de Categoria -->
@@ -42,7 +40,7 @@
         <select name="categoria" id="categoria" required>
           <option value="">Selecione uma categoria</option>
           {% for categoria in categorias %}
-          <option value="{{ categoria }}">{{ categoria }}</option>
+          <option value="{{ categoria }}" {% if doacao and categoria == doacao.categoria %}selected{% endif %}>{{ categoria }}</option>
           {% endfor %}
         </select>
       </div>
@@ -53,7 +51,7 @@
         <select name="estado_conservacao" id="estado_conservacao" required>
           <option value="">Selecione o estado de conservação</option>
           {% for estado in estados %}
-          <option value="{{ estado }}">{{ estado }}</option>
+          <option value="{{ estado }}" {% if doacao and estado == doacao.estado_conservacao %}selected{% endif %}>{{ estado }}</option>
           {% endfor %}
         </select>
       </div>
@@ -64,7 +62,7 @@
         <select name="regiao" id="regiao" required>
           <option value="">Selecione sua região</option>
           {% for regiao in regioes %}
-          <option value="{{ regiao }}">{{ regiao }}</option>
+          <option value="{{ regiao }}" {% if doacao and regiao == doacao.regiao %}selected{% endif %}>{{ regiao }}</option>
           {% endfor %}
         </select>
       </div>
@@ -78,13 +76,15 @@
           name="ponto_referencia"
           maxlength="120"
           placeholder="Opcional, ex.: perto da estação"
+          value="{{ doacao.ponto_referencia or '' if doacao }}"
+
         />
       </div>
 
       <p>Não são aceitos remédios, alimentos, itens sexuais, eletrodomésticos e eletrônicos.</p>
 
       <!-- Botão de Envio -->
-      <button type="submit">Publicar Doação</button>
+      <button type="submit">{% if doacao %}Salvar alterações{% else %}Publicar doação{% endif %}</button>
     </form>
   </body>
 </html>

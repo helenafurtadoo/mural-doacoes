@@ -11,6 +11,9 @@
             {% for doacao in doacoes %}
                 <li>
                     <strong>{{ doacao.titulo }}</strong> - {{ doacao.descricao }} - {{ doacao.categoria }} - {{ doacao.estado_conservacao }} - {{ doacao.regiao }} - {{ doacao.status }} - {{ doacao.data_criacao.strftime('%d/%m/%Y') }}
+                    {% if doacao.status == "disponível" %}
+                        <a href="{{ url_for('editar_doacao', doacao_id=doacao.id) }}">Editar</a>
+                    {% endif %}
                 </li>
             {% endfor %}
         </ul>
