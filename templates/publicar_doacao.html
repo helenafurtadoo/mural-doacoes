@@ -82,6 +82,10 @@
       </div>
       <div>
         <label for="foto">Foto do item:</label>
+        {% if doacao and doacao.foto_caminho %}
+          <img src="{{ url_for('static', filename=doacao.foto_caminho) }}" alt="Foto da doação" width="150">
+        {% endif %}
+        <p>Escolha um arquivo só se quiser trocar a foto.</p>
         <input
           type="file"
           id="foto"
