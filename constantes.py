@@ -4,3 +4,5 @@ REGIOES = ["Plano Piloto", "Gama", "Taguatinga", "Brazlândia", "Sobradinho", "P
 CATEGORIAS = ["Roupas e calçados", "Móveis", "Livros e material escolar", "Brinquedos e itens infantis","Utensílios de casa"]
 
 ESTADO_CONSERVACAO = ["novo", "seminovo", "usado com marcas de uso"]
+
+EXTENSOES_FOTO = ["jpg", "jpeg", "png"]

@@ -1,5 +1,6 @@
+import os, uuid
 from flask import Flask, render_template, request, redirect, url_for, abort
-from constantes import REGIOES, CATEGORIAS, ESTADO_CONSERVACAO
+from constantes import REGIOES, CATEGORIAS, ESTADO_CONSERVACAO, EXTENSOES_FOTO
 from models import db, Usuario, Doacao
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -7,6 +8,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mural.db'
 app.config['SECRET_KEY'] = 'senha'
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads') # Caminho absoluto para a pasta de uploads
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 # Esta em bites, acima disso, o Flask retorna 413 (Request Entity Too Large)
 db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -103,6 +106,26 @@ def validar_doacao(titulo, descricao, categoria, estado_conservacao, regiao, pon
     return None
 
 
+def validar_foto(arquivo):
+    if arquivo is None or arquivo.filename == "":
+        return "Envie uma foto da doação."
+    if "." not in arquivo.filename:
+        return "A foto deve ser em jpg ou png."
+    extensao = arquivo.filename.rsplit(".", 1)[1].lower()
+    if extensao not in EXTENSOES_FOTO:
+        return "A foto deve ser em jpg ou png."
+    return None
+
+
+def salvar_foto(arquivo):
+    pasta = app.config['UPLOAD_FOLDER']
+    os.makedirs(pasta, exist_ok=True)  # cria a pasta se ainda não existir
+    nome_arquivo = str(uuid.uuid4()) + "." + arquivo.filename.rsplit(".", 1)[1].lower()  # Gera um nome único para o arquivo
+    caminho_arquivo = os.path.join(pasta, nome_arquivo)
+    arquivo.save(caminho_arquivo)
+    return "uploads/" + nome_arquivo  # Retorna o caminho relativo para a pasta static, que é onde o Flask serve arquivos estáticos porque a pasta static é a raiz dos arquivos estáticos. Assim, o caminho relativo será usado na tag <img> do HTML.
+
+
 @app.route("/doacoes/nova", methods=["GET", "POST"])
 @login_required
 def publicar_doacao():
@@ -113,11 +136,16 @@ def publicar_doacao():
         estado_conservacao = request.form.get("estado_conservacao", "").strip()
         regiao = request.form.get("regiao", "").strip()
         ponto_referencia = request.form.get("ponto_referencia", "").strip()
+        foto = request.files.get("foto")
 
         erro = validar_doacao(titulo, descricao, categoria, estado_conservacao, regiao, ponto_referencia)
+        if not erro:
+            erro = validar_foto(foto)
         if erro:
             return render_template("publicar_doacao.html", erro=erro, categorias=CATEGORIAS, estados=ESTADO_CONSERVACAO, regioes=REGIOES)
 
+        # A foto só é salva depois que tudo passou na validação (evita arquivos órfãos)
+        foto_caminho = salvar_foto(foto)
         doacao = Doacao(
             doador_id=current_user.id,
             titulo=titulo,
@@ -125,7 +153,8 @@ def publicar_doacao():
             categoria=categoria,
             estado_conservacao=estado_conservacao,
             regiao=regiao,
-            ponto_referencia=ponto_referencia or None  # Se o ponto de referência estiver vazio, armazena None
+            ponto_referencia=ponto_referencia or None,  # Se o ponto de referência estiver vazio, armazena None
+            foto_caminho=foto_caminho
         )
         db.session.add(doacao)
         db.session.commit()
