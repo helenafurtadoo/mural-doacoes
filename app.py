@@ -126,6 +126,16 @@ def salvar_foto(arquivo):
     return "uploads/" + nome_arquivo  # Retorna o caminho relativo para a pasta static, que é onde o Flask serve arquivos estáticos porque a pasta static é a raiz dos arquivos estáticos. Assim, o caminho relativo será usado na tag <img> do HTML.
 
 
+def apagar_foto(caminho_relativo):
+    if caminho_relativo is None:
+        return
+    caminho_completo = os.path.join(app.root_path, 'static', caminho_relativo)
+    try:
+        os.remove(caminho_completo)
+    except OSError:
+        pass  # Se o arquivo não existir, não faz nada
+
+
 @app.route("/doacoes/nova", methods=["GET", "POST"])
 @login_required
 def publicar_doacao():
@@ -194,8 +204,12 @@ def editar_doacao(doacao_id):
         estado_conservacao = request.form.get("estado_conservacao", "").strip()
         regiao = request.form.get("regiao", "").strip()
         ponto_referencia = request.form.get("ponto_referencia", "").strip()
+        foto = request.files.get("foto")
 
         erro = validar_doacao(titulo, descricao, categoria, estado_conservacao, regiao, ponto_referencia)
+        if not erro and foto and foto.filename != "":
+            erro = validar_foto(foto)
+            
         if erro:
             return render_template("publicar_doacao.html", erro=erro, doacao=doacao, categorias=CATEGORIAS, estados=ESTADO_CONSERVACAO, regioes=REGIOES)
 
@@ -207,7 +221,13 @@ def editar_doacao(doacao_id):
         doacao.estado_conservacao = estado_conservacao
         doacao.regiao = regiao
         doacao.ponto_referencia = ponto_referencia or None
+        foto_antiga = None 
+        if foto and foto.filename != "":
+            foto_antiga = doacao.foto_caminho #guarda ANTES de trocar
+            doacao.foto_caminho = salvar_foto(foto)
         db.session.commit()
+        if foto_antiga:
+            apagar_foto(foto_antiga) #apaga a foto antiga depois de salvar a nova
         return redirect(url_for("minhas_doacoes"))
 
     return render_template("publicar_doacao.html", doacao=doacao, categorias=CATEGORIAS, estados=ESTADO_CONSERVACAO, regioes=REGIOES)
